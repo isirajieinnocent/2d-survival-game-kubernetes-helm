@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: "{{ .Values.auth.image }}:{{ .Values.auth.tag }}"
+          ports:
+            - containerPort: {{ .Values.auth.port }}
+          env:
+            - name: DB_TYPE
+              value: "memory"
+            - name: JWT_ISSUER
+              value: "play.text2banger.fun"
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "{{ .Values.auth.port }}"
+          # Add volume mount here
+          volumeMounts:
+            - name: keys-volume
+              mountPath: /app/keys
+              readOnly: true
+      # Add volumes section here
+      volumes:
+        - name: keys-volume
+          secret:
+            secretName: auth-keys

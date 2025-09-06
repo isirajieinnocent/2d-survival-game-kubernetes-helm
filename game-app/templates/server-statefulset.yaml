@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: server
+spec:
+  serviceName: "server-headless"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
+          
+          command: ["spacetime"] 
+          args: ["start", "-l", "0.0.0.0:3000"]
+          
+          ports:
+            - containerPort: {{ .Values.server.port }}
+          volumeMounts:
+            - name: server-data
+              mountPath: /var/lib/spacetimedb
+  volumeClaimTemplates:
+    - metadata:
+        name: server-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.server.storage }}

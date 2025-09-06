@@ -1,0 +1,5 @@
+apiVersion: v2
+name: game-app
+description: Helm chart for 2D Survival Multiplayer Game
+version: 0.1.0
+appVersion: "1.0"
