@@ -1,4 +1,4 @@
-### Project overview
+## Project overview
 
 Kubernetes objects explained
 
@@ -10,7 +10,7 @@ TLS/Ingress explanation
 
 Here’s a draft README for your repo:
 
-## 🎮 2D Survival Multiplayer Game – Kubernetes & Helm Deployment
+# 🎮 2D Survival Multiplayer Game – Kubernetes & Helm Deployment
 
 This repository contains the Kubernetes Helm chart for deploying the 2D Survival Multiplayer Game on a Kubernetes cluster.
 It follows a microservices architecture with separate services for frontend, authentication, and backend game server, all managed with Helm, Ingress, and cert-manager for TLS.
@@ -19,19 +19,19 @@ It follows a microservices architecture with separate services for frontend, aut
 
 The system is split into three main components:
 
-1. ## Client (Frontend)
+1. # Client (Frontend)
 
 Web-based game UI served to players.
 
 Exposed to the internet via Ingress.
 
-2. ## Authentication Service
+2. # Authentication Service
 
 Handles login/registration.
 
 Internal service, used by client and server.
 
-3. ## Game Server
+3. # Game Server
 
 Multiplayer backend logic.
 
@@ -45,7 +45,7 @@ client-deployment.yaml → Deploys the game UI as a scalable Deployment.
 
 client-service.yaml → Exposes the client app (via ClusterIP).
 
-## 2. Authentication Service
+# 2. Authentication Service
 
 auth-deployment.yaml → Deploys authentication microservice.
 
@@ -73,7 +73,7 @@ values.yaml → Configurable settings (replicas, images, domains, resources).
 <img width="822" height="542" alt="image" src="https://github.com/user-attachments/assets/0f2ed7db-24ea-463d-9091-1a0b4d1bad14" />
 
 
-### 🚀 Deployment Steps
+## 🚀 Deployment Steps
 
 # Install cert-manager (for TLS certificates):
 
