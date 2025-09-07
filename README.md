@@ -19,19 +19,19 @@ It follows a microservices architecture with separate services for frontend, aut
 
 The system is split into three main components:
 
-1. # Client (Frontend)
+1. Client (Frontend)
 
 Web-based game UI served to players.
 
 Exposed to the internet via Ingress.
 
-2. # Authentication Service
+2. Authentication Service
 
 Handles login/registration.
 
 Internal service, used by client and server.
 
-3. # Game Server
+3. Game Server
 
 Multiplayer backend logic.
 
