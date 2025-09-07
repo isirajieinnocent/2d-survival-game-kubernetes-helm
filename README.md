@@ -10,28 +10,28 @@ TLS/Ingress explanation
 
 Here’s a draft README for your repo:
 
-# 🎮 2D Survival Multiplayer Game – Kubernetes & Helm Deployment
+## 🎮2D Survival Multiplayer Game – Kubernetes & Helm Deployment
 
 This repository contains the Kubernetes Helm chart for deploying the 2D Survival Multiplayer Game on a Kubernetes cluster.
 It follows a microservices architecture with separate services for frontend, authentication, and backend game server, all managed with Helm, Ingress, and cert-manager for TLS.
 
-## 📂 Architecture Overview
+# 📂 Architecture Overview
 
 The system is split into three main components:
 
-1. Client (Frontend)
+# 1. Client (Frontend)
 
 Web-based game UI served to players.
 
 Exposed to the internet via Ingress.
 
-2. Authentication Service
+# 2. Authentication Service
 
 Handles login/registration.
 
 Internal service, used by client and server.
 
-3. Game Server
+# 3. Game Server
 
 Multiplayer backend logic.
 
