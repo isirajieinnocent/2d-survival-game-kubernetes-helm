@@ -10,12 +10,12 @@ TLS/Ingress explanation
 
 Here’s a draft README for your repo:
 
-## 🎮2D Survival Multiplayer Game – Kubernetes & Helm Deployment
+# 2D Survival Multiplayer Game – Kubernetes & Helm Deployment
 
 This repository contains the Kubernetes Helm chart for deploying the 2D Survival Multiplayer Game on a Kubernetes cluster.
 It follows a microservices architecture with separate services for frontend, authentication, and backend game server, all managed with Helm, Ingress, and cert-manager for TLS.
 
-# 📂 Architecture Overview
+# Architecture Overview
 
 The system is split into three main components:
 
@@ -37,7 +37,7 @@ Multiplayer backend logic.
 
 Runs as a StatefulSet for stable network identity and persistence.
 
-## 🛠️ Kubernetes Objects
+#  Kubernetes Objects
 
 # 1. Frontend (Client)
 
@@ -73,7 +73,7 @@ values.yaml → Configurable settings (replicas, images, domains, resources).
 <img width="822" height="542" alt="image" src="https://github.com/user-attachments/assets/0f2ed7db-24ea-463d-9091-1a0b4d1bad14" />
 
 
-## 🚀 Deployment Steps
+# 🚀 Deployment Steps
 
 # Install cert-manager (for TLS certificates):
 
@@ -95,13 +95,13 @@ helm install survival-game ./game-app
 kubectl get pods,svc,ingress
 
 
-## 🔐 Security & TLS
+# 🔐 Security & TLS
 
 Ingress is configured with cert-manager Issuer for Let’s Encrypt.
 
 HTTPS is automatically provisioned for game endpoints.
 
-## 📊 DevOps Notes
+# 📊 DevOps Notes
 
 Helm ensures repeatable deployments.
 
