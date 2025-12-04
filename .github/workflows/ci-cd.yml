@@ -30,11 +30,20 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Debug workspace
+        run: |
+          echo "Commit: $GITHUB_SHA"
+          pwd
+          ls -la
+          find . -maxdepth 4 -type f -name 'Dockerfile*' || true
+          git ls-files | sed -n '1,200p'
+
       # 🔹 1. Build Auth Server
       - name: Build and push Auth Server
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./auth-server-openauth
+          file: ./auth-server-openauth/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
@@ -42,13 +51,13 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=${{ env.IMAGE_TAG }}
-          file: ./Dockerfile
 
       # 🔹 2. Build Client App
       - name: Build and push Client App
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile.client
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
@@ -56,19 +65,18 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=${{ env.IMAGE_TAG }}
-          file: ./Dockerfile
 
       # 🔹 3. Build SpacetimeDB
       - name: Build and push SpacetimeDB
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile.spacetime
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:latest
           platforms: linux/amd64
-          file: ./Dockerfile
 
       - name: Verify pushed images
         run: |
@@ -175,7 +183,7 @@ jobs:
           kubectl -n staging get pods -l app=spacetime-db
           echo "Smoke test placeholder passed"
 
-      #Notify GitOps repo that images are ready for promotion
+      # 🔔 Notify GitOps repo that images are ready for promotion
       - name: Notify GitOps repo (repository_dispatch)
         env:
           GITOPS_PAT: ${{ secrets.GITOPS_PAT }}
