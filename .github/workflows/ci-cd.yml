@@ -38,12 +38,11 @@ jobs:
           find . -maxdepth 4 -type f -name 'Dockerfile*' || true
           git ls-files | sed -n '1,200p'
 
-      # 🔹 1. Build Auth Server
+      # 🔹 1. Build Auth Server - FIXED
       - name: Build and push Auth Server
         uses: docker/build-push-action@v4
         with:
           context: ./auth-server-openauth
-          file: ./Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
