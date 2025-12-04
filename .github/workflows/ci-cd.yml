@@ -7,7 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/my-app
+  AUTH_IMAGE_NAME: ${{ github.repository_owner }}/auth-server
+  CLIENT_IMAGE_NAME: ${{ github.repository_owner }}/client-app
+  SPACETIME_IMAGE_NAME: ${{ github.repository_owner }}/spacetime-db
   IMAGE_TAG: ${{ github.sha }} # single artifact used across all envs
 
 jobs:
@@ -28,23 +30,56 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build and push Docker image (single artifact)
+      # 🔹 1. Build Auth Server
+      - name: Build and push Auth Server
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:latest
           platforms: linux/amd64
           build-args: |
             VERSION=${{ env.IMAGE_TAG }}
+          file: ./Dockerfile.auth
 
-      - name: Verify pushed image
+      # 🔹 2. Build Client App
+      - name: Build and push Client App
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:latest
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ env.IMAGE_TAG }}
+          file: ./Dockerfile.client
+
+      # 🔹 3. Build SpacetimeDB
+      - name: Build and push SpacetimeDB
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:latest
+          platforms: linux/amd64
+          file: ./Dockerfile.spacetime
+
+      - name: Verify pushed images
         run: |
-          echo "Verifying image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          echo "Verifying Auth Server: ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          docker pull ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
+          
+          echo "Verifying Client: ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          docker pull ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
+          
+          echo "Verifying SpacetimeDB: ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          docker pull ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.9.0
@@ -61,46 +96,105 @@ jobs:
           kubectl get ns dev || kubectl create ns dev
           kubectl get ns staging || kubectl create ns staging
 
-      - name: Pull image into kind node
+      - name: Load all images into kind cluster
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          kind load docker-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --name ci-cluster
+          kind load docker-image ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }} --name ci-cluster
+          kind load docker-image ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }} --name ci-cluster
+          kind load docker-image ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }} --name ci-cluster
 
-      - name: Deploy to DEV with Helm
+      # 🔹 Deploy Auth Server
+      - name: Deploy Auth Server to DEV
         run: |
-          echo "Deploying to DEV with image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-          helm upgrade --install my-app-dev ./helm/my-app \
+          echo "Deploying Auth Server to DEV with image: ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          helm upgrade --install auth-server-dev ./helm/auth-server \
             --namespace dev --create-namespace \
-            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }} \
             --set image.tag=${{ env.IMAGE_TAG }} \
-            -f ./helm/values-dev.yaml
-          kubectl -n dev rollout status deployment/my-app
+            -f ./helm/values-auth-dev.yaml
+          kubectl -n dev rollout status deployment/auth-server
 
-      - name: Deploy to STAGING with Helm
+      # 🔹 Deploy Client App
+      - name: Deploy Client App to DEV
         run: |
-          echo "Deploying to STAGING with image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-          helm upgrade --install my-app-staging ./helm/my-app \
-            --namespace staging --create-namespace \
-            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+          echo "Deploying Client App to DEV with image: ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          helm upgrade --install client-app-dev ./helm/client-app \
+            --namespace dev --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }} \
             --set image.tag=${{ env.IMAGE_TAG }} \
-            -f ./helm/values-staging.yaml
-          kubectl -n staging rollout status deployment/my-app
+            -f ./helm/values-client-dev.yaml
+          kubectl -n dev rollout status deployment/client-app
+
+      # 🔹 Deploy SpacetimeDB
+      - name: Deploy SpacetimeDB to DEV
+        run: |
+          echo "Deploying SpacetimeDB to DEV with image: ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          helm upgrade --install spacetime-db-dev ./helm/spacetime-db \
+            --namespace dev --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }} \
+            --set image.tag=${{ env.IMAGE_TAG }} \
+            -f ./helm/values-spacetime-dev.yaml
+          kubectl -n dev rollout status deployment/spacetime-db
+
+      # Similar for STAGING environment
+      - name: Deploy to STAGING (all services)
+        run: |
+          # Auth Server
+          helm upgrade --install auth-server-staging ./helm/auth-server \
+            --namespace staging --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }} \
+            --set image.tag=${{ env.IMAGE_TAG }} \
+            -f ./helm/values-auth-staging.yaml
+          
+          # Client App
+          helm upgrade --install client-app-staging ./helm/client-app \
+            --namespace staging --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }} \
+            --set image.tag=${{ env.IMAGE_TAG }} \
+            -f ./helm/values-client-staging.yaml
+          
+          # SpacetimeDB
+          helm upgrade --install spacetime-db-staging ./helm/spacetime-db \
+            --namespace staging --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }} \
+            --set image.tag=${{ env.IMAGE_TAG }} \
+            -f ./helm/values-spacetime-staging.yaml
+          
+          # Wait for all deployments
+          kubectl -n staging rollout status deployment/auth-server
+          kubectl -n staging rollout status deployment/client-app
+          kubectl -n staging rollout status deployment/spacetime-db
 
       - name: Smoke test STAGING
         run: |
-          echo "Run real smoke tests here (curl / health checks, etc.)"
+          echo "Testing all services..."
+          echo "1. Testing Auth Server..."
+          kubectl -n staging get pods -l app=auth-server
+          echo "2. Testing Client App..."
+          kubectl -n staging get pods -l app=client-app
+          echo "3. Testing SpacetimeDB..."
+          kubectl -n staging get pods -l app=spacetime-db
           echo "Smoke test placeholder passed"
 
-      # 🔔 New: notify GitOps repo that image is ready for promotion
+      #Notify GitOps repo that images are ready for promotion
       - name: Notify GitOps repo (repository_dispatch)
         env:
-          GITOPS_PAT: ${{ secrets.GITOPS_PAT }}   # PAT with access to GitOps repo
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GITOPS_PAT: ${{ secrets.GITOPS_PAT }}
+          AUTH_IMAGE_TAG: ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          CLIENT_IMAGE_TAG: ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          SPACETIME_IMAGE_TAG: ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         run: |
-          echo "Triggering GitOps promotion workflow with image tag: $IMAGE_TAG"
-
+          echo "Triggering GitOps promotion workflow for all services"
+          
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${GITOPS_PAT}" \
             https://api.github.com/repos/your-org/my-app-gitops/dispatches \
-            -d '{"event_type":"promote-prod","client_payload":{"image_tag":"'"${IMAGE_TAG}"'"}}'
+            -d '{
+              "event_type": "promote-prod",
+              "client_payload": {
+                "auth_image": "'"${AUTH_IMAGE_TAG}"'",
+                "client_image": "'"${CLIENT_IMAGE_TAG}"'",
+                "spacetime_image": "'"${SPACETIME_IMAGE_TAG}"'",
+                "image_tag": "'"${IMAGE_TAG}"'"
+              }
+            }'

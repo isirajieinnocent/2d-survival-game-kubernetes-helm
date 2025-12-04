@@ -12,11 +12,9 @@ COPY . .
 
 # RUN chown -R 1000:1000 /app/data
 
-
 # VOLUME ["/app/data"]
 
 EXPOSE 3000
 
-# RUN start
-# (If you have a start script, uncomment the CMD line below.)
-CMD ["spacetime start -l spacetime-server:3000 "]
+# Fixed CMD - remove extra bracket and use proper format
+CMD ["spacetime", "start", "-l", "spacetime-server:3000"]
