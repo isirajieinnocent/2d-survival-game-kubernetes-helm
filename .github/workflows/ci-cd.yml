@@ -62,8 +62,8 @@ jobs:
       - name: Build and push Client App
         uses: docker/build-push-action@v4
         with:
-          context: .
-          file: ./Dockerfile.client
+          context: ./client
+          file: ./client/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
@@ -76,8 +76,8 @@ jobs:
       - name: Build and push SpacetimeDB
         uses: docker/build-push-action@v4
         with:
-          context: .
-          file: ./Dockerfile.spacetime
+          context: ./server
+          file: ./server/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
