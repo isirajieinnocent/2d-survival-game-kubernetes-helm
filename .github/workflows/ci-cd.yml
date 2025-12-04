@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  packages: write   # allow GITHUB_TOKEN to push to GHCR
+
 env:
   REGISTRY: ghcr.io
   AUTH_IMAGE_NAME: ${{ github.repository_owner }}/auth-server
