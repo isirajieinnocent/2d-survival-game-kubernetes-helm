@@ -42,7 +42,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=${{ env.IMAGE_TAG }}
-          file: ./Dockerfile.auth
+          file: ./Dockerfile
 
       # 🔹 2. Build Client App
       - name: Build and push Client App
@@ -56,7 +56,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=${{ env.IMAGE_TAG }}
-          file: ./Dockerfile.client
+          file: ./Dockerfile
 
       # 🔹 3. Build SpacetimeDB
       - name: Build and push SpacetimeDB
@@ -68,7 +68,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:latest
           platforms: linux/amd64
-          file: ./Dockerfile.spacetime
+          file: ./Dockerfile
 
       - name: Verify pushed images
         run: |
