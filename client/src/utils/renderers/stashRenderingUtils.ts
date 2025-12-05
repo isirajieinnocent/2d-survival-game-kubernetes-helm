@@ -3,7 +3,7 @@
 import { Stash } from '../../generated';
 // Assuming itemImagesStore is not the correct way, reverting to itemImagesRef prop
 // import { itemImagesStore } from '../../hooks/useAssetLoader'; 
-import stashImageSrc from '../../assets/doodads/stash.png'; // Assuming this is the correct path
+import stashImageSrc from '../../assets/items/stash.png';
 import { GroundEntityConfig, renderConfiguredGroundEntity } from './genericGroundRenderer';
 import { applyStandardDropShadow } from './shadowUtils';
 import { imageManager } from './imageManager';
