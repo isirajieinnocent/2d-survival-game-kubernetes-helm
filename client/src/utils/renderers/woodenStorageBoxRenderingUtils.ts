@@ -1,8 +1,13 @@
 import { WoodenStorageBox } from '../../generated';
-import boxImage from '../../assets/hero.png';
+import boxImage from '../../assets/hero.png'; // or your box sprite
 import { applyStandardDropShadow } from './shadowUtils';
 import { GroundEntityConfig, renderConfiguredGroundEntity } from './genericGroundRenderer';
 import { imageManager } from './imageManager';
+
+// Extend the generated type with an optional isHidden flag
+type WoodenStorageBoxWithHidden = WoodenStorageBox & {
+  isHidden?: boolean;
+};
 
 // --- Constants ---
 export const BOX_WIDTH = 64;
@@ -15,15 +20,16 @@ const HEALTH_BAR_HEIGHT = 6;
 const HEALTH_BAR_Y_OFFSET = 8;
 const HEALTH_BAR_VISIBLE_DURATION_MS = 3000;
 
-const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
+const boxConfig: GroundEntityConfig<WoodenStorageBoxWithHidden> = {
   getImageSource: (entity) => {
+    // Don't render if destroyed or hidden
     if (entity.isDestroyed || entity.isHidden) {
       return null;
     }
     return boxImage;
   },
 
-  getTargetDimensions: (_img: HTMLImageElement, _entity: WoodenStorageBox) => ({
+  getTargetDimensions: (_img: HTMLImageElement, _entity: WoodenStorageBoxWithHidden) => ({
     width: BOX_WIDTH,
     height: BOX_HEIGHT,
   }),
@@ -36,6 +42,7 @@ const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
   getShadowParams: undefined,
 
   applyEffects: (ctx, entity, nowMs, _baseDrawX, _baseDrawY, cycleProgress) => {
+    // Only draw shadow if visible and not destroyed
     if (!entity.isHidden && !entity.isDestroyed) {
       applyStandardDropShadow(ctx, { cycleProgress, blur: 4, offsetY: 3 });
     }
@@ -44,7 +51,7 @@ const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
     let shakeOffsetY = 0;
 
     if (entity.lastHitTime && !entity.isDestroyed) {
-      // Convert micros (bigint) to ms safely:
+      // Convert micros (bigint) to ms safely
       const lastHitTimeMs = Number(entity.lastHitTime.microsSinceUnixEpoch / 1000n);
       const elapsedSinceHit = nowMs - lastHitTimeMs;
 
@@ -70,6 +77,7 @@ const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
     _baseDrawX,
     _baseDrawY
   ) => {
+    // If destroyed or hidden, nothing to draw
     if (entity.isDestroyed || entity.isHidden) return;
 
     const health = entity.health ?? 0;
@@ -87,15 +95,18 @@ const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
         const timeSinceLastHitRatio = elapsedSinceHit / HEALTH_BAR_VISIBLE_DURATION_MS;
         const opacity = Math.max(0, 1 - Math.pow(timeSinceLastHitRatio, 2));
 
+        // Background
         ctx.fillStyle = `rgba(0, 0, 0, ${0.5 * opacity})`;
         ctx.fillRect(barOuterX, barOuterY, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
 
+        // Health fill
         const healthBarInnerWidth = HEALTH_BAR_WIDTH * healthPercentage;
         const r = Math.floor(255 * (1 - healthPercentage));
         const g = Math.floor(255 * healthPercentage);
         ctx.fillStyle = `rgba(${r}, ${g}, 0, ${opacity})`;
         ctx.fillRect(barOuterX, barOuterY, healthBarInnerWidth, HEALTH_BAR_HEIGHT);
 
+        // Border
         ctx.strokeStyle = `rgba(0,0,0, ${0.7 * opacity})`;
         ctx.lineWidth = 1;
         ctx.strokeRect(barOuterX, barOuterY, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -106,14 +117,14 @@ const boxConfig: GroundEntityConfig<WoodenStorageBox> = {
   fallbackColor: '#A0522D',
 };
 
-// Preload image only if the asset bundle provides it
+// Preload image if present
 if (boxImage) {
   imageManager.preloadImage(boxImage);
 }
 
 export function renderWoodenStorageBox(
   ctx: CanvasRenderingContext2D,
-  box: WoodenStorageBox,
+  box: WoodenStorageBoxWithHidden,
   nowMs: number,
   cycleProgress: number
 ) {
