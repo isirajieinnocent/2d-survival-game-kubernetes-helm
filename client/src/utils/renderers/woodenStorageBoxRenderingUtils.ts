@@ -1,5 +1,5 @@
 import { WoodenStorageBox } from '../../generated'; // Import generated type
-import boxImage from '../../assets/doodads/wooden_storage_box.png'; // Direct import
+import boxImage from '../../assets/hero.png'; // TEMP: placeholder image
 import { applyStandardDropShadow } from './shadowUtils'; // Added import
 import { GroundEntityConfig, renderConfiguredGroundEntity } from './genericGroundRenderer'; // Import generic renderer
 import { imageManager } from './imageManager'; // Import image manager
