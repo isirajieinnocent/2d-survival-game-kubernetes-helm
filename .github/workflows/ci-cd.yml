@@ -117,13 +117,12 @@ jobs:
       # Deploy Auth Server to DEV
       - name: Deploy Auth Server to DEV
         run: |
-          echo "Deploying Auth Server to DEV with image: $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG"
-          helm upgrade --install auth-server-dev ./helm/auth-server \
-            --namespace dev --create-namespace \
-            --set image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
-            --set image.tag=$IMAGE_TAG \
-            -f ./helm/values-auth-dev.yaml
-          kubectl -n dev rollout status deployment/auth-server
+          echo "Deploying Auth Server to DEV with image: ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          helm upgrade --install auth-server-dev ./game-app \
+             --set image.repository=${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }} \
+             --set image.tag=${{ env.IMAGE_TAG }} \
+             --namespace dev \
+             --create-namespace
 
       # Deploy Client App to DEV
       - name: Deploy Client App to DEV
