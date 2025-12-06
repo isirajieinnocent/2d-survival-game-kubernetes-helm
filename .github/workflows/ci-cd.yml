@@ -14,7 +14,7 @@ env:
   AUTH_IMAGE_NAME: ${{ github.repository_owner }}/auth-server
   CLIENT_IMAGE_NAME: ${{ github.repository_owner }}/client-app
   SPACETIME_IMAGE_NAME: ${{ github.repository_owner }}/spacetime-db
-  IMAGE_TAG: ${{ github.sha }} # single artifact tag used across all services
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build-and-test-kind:
@@ -28,8 +28,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: isirajieinnocent              # your GitHub username
-          password: ${{ secrets.GHCR_PAT }}       # PAT with write:packages
+          username: isirajieinnocent          # your GitHub username
+          password: ${{ secrets.GHCR_PAT }}   # PAT with write:packages
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -86,10 +86,10 @@ jobs:
         run: |
           echo "Verifying Auth Server: $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG"
           docker pull $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG || exit 1
-          
+
           echo "Verifying Client: $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG"
           docker pull $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG || exit 1
-          
+
           echo "Verifying SpacetimeDB: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
           docker pull $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG || exit 1
 
@@ -114,85 +114,49 @@ jobs:
           kind load docker-image $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
           kind load docker-image $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
 
-        #Deploy Auth Server to DEV 
-       - name: Deploy Auth Server to DEV
+      # ---------- DEV DEPLOYMENT ----------
+      - name: Deploy all services to DEV
         run: |
-          echo "Deploying Auth Server to DEV with image: $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG"
-          helm upgrade --install auth-server-dev ./game-app \
+          echo "Deploying all services to DEV with tag: $IMAGE_TAG"
+
+          helm upgrade --install game-dev ./game-app \
             --namespace dev --create-namespace \
             --set auth.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
-            --set auth.image.tag=$IMAGE_TAG
-          kubectl -n dev rollout status deployment/auth-server
-
-
-      # Deploy Client App to DEV
-      - name: Deploy Client App to DEV
-        run: |
-          echo "Deploying Client App to DEV with image: $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG"
-          helm upgrade --install client-app-dev ./game-app \
-            --namespace dev --create-namespace \
+            --set auth.image.tag=$IMAGE_TAG \
             --set client.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
-            --set client.image.tag=$IMAGE_TAG
-          kubectl -n dev rollout status deployment/client
-
-      - name: Deploy SpacetimeDB to DEV
-        run: |
-          echo "Deploying SpacetimeDB to DEV with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
-          helm upgrade --install spacetime-db-dev ./game-app \
-            --namespace dev --create-namespace \
+            --set client.image.tag=$IMAGE_TAG \
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
+
+          kubectl -n dev rollout status deployment/auth
+          kubectl -n dev rollout status deployment/client
           kubectl -n dev rollout status statefulset/server
 
-
-
-      # Deploy all services to STAGING
-      - name: Deploy to STAGING (all services)
+      # ---------- STAGING DEPLOYMENT ----------
+      - name: Deploy all services to STAGING
         run: |
           echo "Deploying all services to STAGING with tag: $IMAGE_TAG"
 
-          #Auth Server
-          helm upgrade --install auth-server-staging ./game-app \
+          helm upgrade --install game-staging ./game-app \
             --namespace staging --create-namespace \
-            --set auth-service.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
-            --set auth-service.image.tag=$IMAGE_TAG
-
-          # Client App
-          helm upgrade --install client-app-staging ./game-app \
-            --namespace staging --create-namespace \
-            --set client-app.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
-            --set client-app.image.tag=$IMAGE_TAG
-
-        #SpacetimeDB
-      - name: Deploy SpacetimeDB to STAGING
-        run: |
-          echo "Deploying SpacetimeDB to STAGING with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
-          helm upgrade --install spacetime-db-staging ./game-app \
-            --namespace staging --create-namespace \
+            --set auth.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
+            --set auth.image.tag=$IMAGE_TAG \
+            --set client.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
+            --set client.image.tag=$IMAGE_TAG \
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
-          kubectl -n staging rollout status statefulset/spacetime-db
-      
-      # Wait for all deployments
-      - name: Wait for deployments
-        run: |
+
           kubectl -n staging rollout status deployment/auth
           kubectl -n staging rollout status deployment/client
           kubectl -n staging rollout status statefulset/server
 
-         # Smoke test all services in STAGING
       - name: Smoke test STAGING
         run: |
           echo "Testing all services in STAGING..."
-          echo "1. Testing Auth Server..."
-          kubectl -n staging get pods -l app=auth-server
-          echo "2. Testing Client App..."
-          kubectl -n staging get pods -l app=client-app
-          echo "3. Testing SpacetimeDB..."
-          kubectl -n staging get pods -l app=spacetime-db
+          kubectl -n staging get pods
           echo "Smoke test placeholder passed"
 
-      # Notify GitOps repo that images are ready for promotion
+      # ---------- GITOPS NOTIFY ----------
       - name: Notify GitOps repo (repository_dispatch)
         env:
           GITOPS_PAT: ${{ secrets.GITOPS_PAT }}     # PAT with access to GitOps repo
