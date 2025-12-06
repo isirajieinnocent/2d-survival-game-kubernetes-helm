@@ -153,25 +153,25 @@ jobs:
           echo "Deploying all services to STAGING with tag: $IMAGE_TAG"
 
           # Auth Server
-          helm upgrade --install auth-server-staging ./helm/auth-server \
+          helm upgrade --install auth-server-staging ./game-appauth-server \
             --namespace staging --create-namespace \
             --set image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
             --set image.tag=$IMAGE_TAG \
-            -f ./helm/values-auth-staging.yaml
+            -f ./game-appvalues-auth-staging.yaml
           
           # Client App
-          helm upgrade --install client-app-staging ./helm/client-app \
+          helm upgrade --install client-app-staging ./game-appclient-app \
             --namespace staging --create-namespace \
             --set image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
             --set image.tag=$IMAGE_TAG \
-            -f ./helm/values-client-staging.yaml
+            -f ./game-app
           
           # SpacetimeDB
-          helm upgrade --install spacetime-db-staging ./helm/spacetime-db \
+          helm upgrade --install spacetime-db-staging ./game-app\
             --namespace staging --create-namespace \
             --set image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set image.tag=$IMAGE_TAG \
-            -f ./helm/values-spacetime-staging.yaml
+            -f./game-app
           
           # Wait for all deployments
           kubectl -n staging rollout status deployment/auth-server
