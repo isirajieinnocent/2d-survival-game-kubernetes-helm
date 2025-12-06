@@ -115,14 +115,15 @@ jobs:
           kind load docker-image $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
 
         #Deploy Auth Server to DEV 
-      - name: Deploy Auth Server to DEV
+       - name: Deploy Auth Server to DEV
         run: |
           echo "Deploying Auth Server to DEV with image: $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install auth-server-dev ./game-app \
             --namespace dev --create-namespace \
-            --set auth-service.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
-            --set auth-service.image.tag=$IMAGE_TAG
+            --set auth.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
+            --set auth.image.tag=$IMAGE_TAG
           kubectl -n dev rollout status deployment/auth-server
+
 
       # Deploy Client App to DEV
       - name: Deploy Client App to DEV
@@ -130,11 +131,10 @@ jobs:
           echo "Deploying Client App to DEV with image: $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install client-app-dev ./game-app \
             --namespace dev --create-namespace \
-            --set client-app.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
-            --set client-app.image.tag=$IMAGE_TAG
-          kubectl -n dev rollout status deployment/client-app
+            --set client.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
+            --set client.image.tag=$IMAGE_TAG
+          kubectl -n dev rollout status deployment/client
 
-      # Deploy SpacetimeDB to DEV
       - name: Deploy SpacetimeDB to DEV
         run: |
           echo "Deploying SpacetimeDB to DEV with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
@@ -142,7 +142,8 @@ jobs:
             --namespace dev --create-namespace \
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
-          kubectl -n dev rollout status statefulset/spacetime-db
+          kubectl -n dev rollout status statefulset/server
+
 
 
       # Deploy all services to STAGING
@@ -171,14 +172,13 @@ jobs:
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
           kubectl -n staging rollout status statefulset/spacetime-db
+      
+        # Wait for all deployments
+       kubectl -n staging rollout status deployment/auth
+       kubectl -n staging rollout status deployment/client
+       kubectl -n staging rollout status statefulset/server
 
-
-          #Wait for all deployments
-          kubectl -n staging rollout status deployment/auth-server
-          kubectl -n staging rollout status deployment/client-app
-          kubectl -n staging rollout status deployment/spacetime-db
-
-
+         # Smoke test all services in STAGING
       - name: Smoke test STAGING
         run: |
           echo "Testing all services in STAGING..."
