@@ -1,4 +1,23 @@
 # Update the auth path in ingress to use the correct port (4001 instead of 80)
+
+auth:
+  image:
+    repository: "ghcr.io/isirajieinnocent/auth-server"
+    tag: "latest"
+  port: 4001   # or whatever your auth-server listens on
+
+client:
+  image:
+    repository: "ghcr.io/isirajieinnocent/client-app"
+    tag: "latest"
+  port: 80     # this matches what client-service.yaml expects
+
+server:
+  image:
+    repository: "ghcr.io/isirajieinnocent/spacetime-db"
+    tag: "latest"
+  port: 3000   # adjust to whatever your SpacetimeDB server uses
+
 server:
   image:
     repository: "ghcr.io/isirajieinnocent/spacetime-db"
