@@ -114,69 +114,66 @@ jobs:
           kind load docker-image $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
           kind load docker-image $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
 
-      # Deploy Auth Server to DEV
+        #Deploy Auth Server to DEV 
       - name: Deploy Auth Server to DEV
         run: |
-          echo "Deploying Auth Server to DEV with image: ${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "Deploying Auth Server to DEV with image: $REGISTRY/$AUTH_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install auth-server-dev ./game-app \
-             --set auth-service.image.repository=${{ env.REGISTRY }}/${{ env.AUTH_IMAGE_NAME }} \
-             --set auth-service.image.tag=${{ env.IMAGE_TAG }} \
-             --namespace dev \
-             --create-namespace
+            --namespace dev --create-namespace \
+            --set auth-service.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
+            --set auth-service.image.tag=$IMAGE_TAG
           kubectl -n dev rollout status deployment/auth-server
 
       # Deploy Client App to DEV
       - name: Deploy Client App to DEV
         run: |
-          echo "Deploying Client App to DEV with image: ${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "Deploying Client App to DEV with image: $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install client-app-dev ./game-app \
-            --set client-app.image.repository=${{ env.REGISTRY }}/${{ env.CLIENT_IMAGE_NAME }} \
-            --set client-app.image.tag=${{ env.IMAGE_TAG }} \
             --namespace dev --create-namespace \
-            -f ./game-app/values-client-dev.yaml
+            --set client-app.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
+            --set client-app.image.tag=$IMAGE_TAG
           kubectl -n dev rollout status deployment/client-app
 
       # Deploy SpacetimeDB to DEV
       - name: Deploy SpacetimeDB to DEV
         run: |
-          echo "Deploying SpacetimeDB to DEV with image: ${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "Deploying SpacetimeDB to DEV with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install spacetime-db-dev ./game-app \
-            --set spacetimedb.image.repository=${{ env.REGISTRY }}/${{ env.SPACETIME_IMAGE_NAME }} \
-            --set spacetimedb.image.tag=${{ env.IMAGE_TAG }} \
             --namespace dev --create-namespace \
-            -f ./game-app/values-spacetime-dev.yaml
+            --set spacetimedb.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
+            --set spacetimedb.image.tag=$IMAGE_TAG
           kubectl -n dev rollout status deployment/spacetime-db
+
+
 
       # Deploy all services to STAGING
       - name: Deploy to STAGING (all services)
         run: |
           echo "Deploying all services to STAGING with tag: $IMAGE_TAG"
 
-          # Auth Server
-          helm upgrade --install auth-server-staging ./game-appauth-server \
+          #Auth Server
+          helm upgrade --install auth-server-staging ./game-app \
             --namespace staging --create-namespace \
-            --set image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
-            --set image.tag=$IMAGE_TAG \
-            -f ./game-appvalues-auth-staging.yaml
-          
+            --set auth-service.image.repository=$REGISTRY/$AUTH_IMAGE_NAME \
+            --set auth-service.image.tag=$IMAGE_TAG
+
           # Client App
-          helm upgrade --install client-app-staging ./game-appclient-app \
+          helm upgrade --install client-app-staging ./game-app \
             --namespace staging --create-namespace \
-            --set image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
-            --set image.tag=$IMAGE_TAG \
-            -f ./game-app
-          
+            --set client-app.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
+            --set client-app.image.tag=$IMAGE_TAG
+
           # SpacetimeDB
-          helm upgrade --install spacetime-db-staging ./game-app\
+          helm upgrade --install spacetime-db-staging ./game-app \
             --namespace staging --create-namespace \
-            --set image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
-            --set image.tag=$IMAGE_TAG \
-            -f./game-app
-          
-          # Wait for all deployments
+            --set spacetimedb.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
+            --set spacetimedb.image.tag=$IMAGE_TAG
+
+          #Wait for all deployments
           kubectl -n staging rollout status deployment/auth-server
           kubectl -n staging rollout status deployment/client-app
           kubectl -n staging rollout status deployment/spacetime-db
+
 
       - name: Smoke test STAGING
         run: |
