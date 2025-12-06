@@ -1,4 +1,8 @@
 # Update the auth path in ingress to use the correct port (4001 instead of 80)
+server:
+  image:
+    repository: "ghcr.io/isirajieinnocent/spacetime-db"
+    tag: "latest"
 ingress:
   enabled: true
   className: "nginx"

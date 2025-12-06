@@ -140,10 +140,9 @@ jobs:
           echo "Deploying SpacetimeDB to DEV with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install spacetime-db-dev ./game-app \
             --namespace dev --create-namespace \
-            --set spacetimedb.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
-            --set spacetimedb.image.tag=$IMAGE_TAG
-          kubectl -n dev rollout status deployment/spacetime-db
-
+            --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
+            --set server.image.tag=$IMAGE_TAG
+          kubectl -n dev rollout status statefulset/spacetime-db
 
 
       # Deploy all services to STAGING
@@ -163,11 +162,16 @@ jobs:
             --set client-app.image.repository=$REGISTRY/$CLIENT_IMAGE_NAME \
             --set client-app.image.tag=$IMAGE_TAG
 
-          # SpacetimeDB
+        #SpacetimeDB
+      - name: Deploy SpacetimeDB to STAGING
+        run: |
+          echo "Deploying SpacetimeDB to STAGING with image: $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG"
           helm upgrade --install spacetime-db-staging ./game-app \
             --namespace staging --create-namespace \
-            --set spacetimedb.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
-            --set spacetimedb.image.tag=$IMAGE_TAG
+            --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
+            --set server.image.tag=$IMAGE_TAG
+          kubectl -n staging rollout status statefulset/spacetime-db
+
 
           #Wait for all deployments
           kubectl -n staging rollout status deployment/auth-server
