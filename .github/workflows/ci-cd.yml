@@ -173,10 +173,12 @@ jobs:
             --set server.image.tag=$IMAGE_TAG
           kubectl -n staging rollout status statefulset/spacetime-db
       
-        # Wait for all deployments
-       kubectl -n staging rollout status deployment/auth
-       kubectl -n staging rollout status deployment/client
-       kubectl -n staging rollout status statefulset/server
+      # Wait for all deployments
+      - name: Wait for deployments
+        run: |
+          kubectl -n staging rollout status deployment/auth
+          kubectl -n staging rollout status deployment/client
+          kubectl -n staging rollout status statefulset/server
 
          # Smoke test all services in STAGING
       - name: Smoke test STAGING
