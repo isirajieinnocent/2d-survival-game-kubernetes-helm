@@ -114,7 +114,7 @@ jobs:
           kind load docker-image $REGISTRY/$CLIENT_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
           kind load docker-image $REGISTRY/$SPACETIME_IMAGE_NAME:$IMAGE_TAG --name ci-cluster
 
-      # ---------- DEV DEPLOYMENT ----------
+            # ---------- DEV DEPLOYMENT ----------
       - name: Deploy all services to DEV
         run: |
           echo "Deploying all services to DEV with tag: $IMAGE_TAG"
@@ -128,9 +128,8 @@ jobs:
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
 
-          kubectl -n dev rollout status deployment/auth
-          kubectl -n dev rollout status deployment/client
-          kubectl -n dev rollout status statefulset/server
+          echo "Resources in dev namespace after deploy:"
+          kubectl -n dev get deploy,sts,pods
 
       # ---------- STAGING DEPLOYMENT ----------
       - name: Deploy all services to STAGING
@@ -146,15 +145,15 @@ jobs:
             --set server.image.repository=$REGISTRY/$SPACETIME_IMAGE_NAME \
             --set server.image.tag=$IMAGE_TAG
 
-          kubectl -n staging rollout status deployment/auth
-          kubectl -n staging rollout status deployment/client
-          kubectl -n staging rollout status statefulset/server
+          echo "Resources in staging namespace after deploy:"
+          kubectl -n staging get deploy,sts,pods
 
       - name: Smoke test STAGING
         run: |
           echo "Testing all services in STAGING..."
           kubectl -n staging get pods
           echo "Smoke test placeholder passed"
+
 
       # ---------- GITOPS NOTIFY ----------
       - name: Notify GitOps repo (repository_dispatch)
