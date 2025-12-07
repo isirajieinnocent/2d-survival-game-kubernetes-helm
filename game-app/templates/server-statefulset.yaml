@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: server
+  name: {{ include "game-app.fullname" . }}-server
 spec:
   serviceName: "server-headless"
   replicas: 1
