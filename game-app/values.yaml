@@ -1,52 +1,20 @@
-# Update the auth path in ingress to use the correct port (4001 instead of 80)
-
-auth:
+server:
+  replicaCount: 1
   image:
-    repository: "ghcr.io/isirajieinnocent/auth-server"
-    tag: "latest"
-  port: 4001   # or whatever your auth-server listens on
+    repository: ghcr.io/isirajieinnocent/spacetime-db
+    tag: latest
+  port: 4242
 
 client:
+  replicaCount: 1
   image:
-    repository: "ghcr.io/isirajieinnocent/client-app"
-    tag: "latest"
-  port: 80     # this matches what client-service.yaml expects
+    repository: ghcr.io/isirajieinnocent/client-app
+    tag: latest
+  port: 5173
 
-server:
+auth:
+  replicaCount: 1
   image:
-    repository: "ghcr.io/isirajieinnocent/spacetime-db"
-    tag: "latest"
-  port: 3000   # adjust to whatever your SpacetimeDB server uses
-
-server:
-  image:
-    repository: "ghcr.io/isirajieinnocent/spacetime-db"
-    tag: "latest"
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/rewrite-target: "/"
-  hosts:
-    - host: "play.text2banger.fun"
-      paths:
-        - path: "/"
-          pathType: "Prefix"
-          backend:
-            serviceName: "client"
-            servicePort: 80
-        - path: "/auth"
-          pathType: "Prefix"
-          backend:
-            serviceName: "auth"
-            servicePort: 4001  # ← CHANGE THIS FROM 80 TO 4001
-        - path: "/server"
-          pathType: "Prefix"
-          backend:
-            serviceName: "server"
-            servicePort: 80
-  tls:
-    - secretName: "play-text2banger-tls"
-      hosts:
-        - "play.text2banger.fun"
+    repository: ghcr.io/isirajieinnocent/auth-server
+    tag: latest
+  port: 4001

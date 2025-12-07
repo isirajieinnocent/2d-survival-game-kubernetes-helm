@@ -1,23 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  metadata:
   name: {{ include "game-app.fullname" . }}-auth
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "game-app.labels" . | nindent 4 }}
+    app: {{ include "game-app.fullname" . }}-auth
 spec:
-  replicas: 1
+  replicas: {{ .Values.auth.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: auth
+      app: {{ include "game-app.fullname" . }}-auth
   template:
     metadata:
       labels:
-        app: auth
+        app: {{ include "game-app.fullname" . }}-auth
+        {{- include "game-app.labels" . | nindent 8 }}
     spec:
       containers:
         - name: auth
-          image: "{{ .Values.auth.image }}:{{ .Values.auth.tag }}"
+          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag }}"
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: {{ .Values.auth.port }}
+            - name: http
+              containerPort: {{ .Values.auth.port }}
           env:
             - name: DB_TYPE
               value: "memory"
@@ -27,12 +33,10 @@ spec:
               value: "production"
             - name: PORT
               value: "{{ .Values.auth.port }}"
-          # Add volume mount here
           volumeMounts:
             - name: keys-volume
               mountPath: /app/keys
               readOnly: true
-      # Add volumes section here
       volumes:
         - name: keys-volume
           secret:

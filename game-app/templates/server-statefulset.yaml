@@ -2,34 +2,29 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "game-app.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "game-app.labels" . | nindent 4 }}
+    app: {{ include "game-app.fullname" . }}-server
 spec:
-  serviceName: "server-headless"
-  replicas: 1
+  serviceName: {{ include "game-app.fullname" . }}-server
+  replicas: {{ .Values.server.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: server
+      app: {{ include "game-app.fullname" . }}-server
   template:
     metadata:
       labels:
-        app: server
+        app: {{ include "game-app.fullname" . }}-server
+        {{- include "game-app.labels" . | nindent 8 }}
     spec:
       containers:
         - name: server
-          image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
-          
-          command: ["spacetime"] 
-          args: ["start", "-l", "0.0.0.0:3000"]
-          
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: {{ .Values.server.port }}
-          volumeMounts:
-            - name: server-data
-              mountPath: /var/lib/spacetimedb
-  volumeClaimTemplates:
-    - metadata:
-        name: server-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: {{ .Values.server.storage }}
+            - name: grpc
+              containerPort: {{ .Values.server.port | default 4242 }}
+          env:
+            - name: RUST_LOG
+              value: "info"

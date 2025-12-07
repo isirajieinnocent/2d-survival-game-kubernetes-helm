@@ -1,26 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "game-app.fullname" . }}-client 
-  namespace: {{ .Release.Namespace }} 
+  name: {{ include "game-app.fullname" . }}-client
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "game-app.labels" . | nindent 4 }}
+    app: {{ include "game-app.fullname" . }}-client
 spec:
-  replicas: 1
+  replicas: {{ .Values.client.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: client
+      app: {{ include "game-app.fullname" . }}-client
   template:
     metadata:
       labels:
-        app: client
+        app: {{ include "game-app.fullname" . }}-client
+        {{- include "game-app.labels" . | nindent 8 }}
     spec:
       containers:
         - name: client
-          image: innocenttech/client:latest
-          command: ["sh", "-c", "cd /app/dist && npx serve -s . -l 5173"]
+          image: "{{ .Values.client.image.repository }}:{{ .Values.client.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          command:
+            - "sh"
+            - "-c"
+            - "cd /app/dist && npx serve -s . -l {{ .Values.client.port }}"
           ports:
-            - containerPort: 5173
+            - name: http
+              containerPort: {{ .Values.client.port }}
           env:
             - name: HOST
               value: "0.0.0.0"
             - name: PORT
-              value: "5173"
+              value: "{{ .Values.client.port }}"
